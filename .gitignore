@@ -1,1 +1,8 @@
 /data
+venv/
+mlruns/
+mlflow.db
+__pycache__/
+*.pyc
+.vscode/
+.kilo/

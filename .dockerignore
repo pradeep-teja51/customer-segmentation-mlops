@@ -1,0 +1,9 @@
+venv/
+.venv/
+.git/
+.dvc/
+mlruns/
+__pycache__/
+*.pyc
+.vscode/
+notebooks/.ipynb_checkpoints/
