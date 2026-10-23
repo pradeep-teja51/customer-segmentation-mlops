@@ -8,7 +8,7 @@ st.set_page_config(page_title="Customer Segmentation Dashboard", layout="wide")
 st.title("📊 Customer Segmentation Dashboard")
 
 # ---- Step 2: Load the segmented data ----
-rfm = pd.read_csv("data/rfm_segmented.csv")
+rfm = pd.read_csv("dashboard/rfm_segmented.csv")
 
 # ---- Step 3: Show segment overview ----
 st.header("Segment Overview")
