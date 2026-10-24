@@ -97,7 +97,7 @@ python -m pytest tests -v
 
 ## Status and limitations
 
-- There is no live deployment yet.
+- The dashboard is deployed on Streamlit Community Cloud. The prediction API is containerized with Docker but is not hosted publicly.
 - CI tests and builds the API service only. The dashboard needs `data/rfm_segmented.csv`, which is not in the repository.
 - The drift check uses simulated data, and drift does not trigger retraining automatically.
 - The two API tests are a small suite, not full coverage.
