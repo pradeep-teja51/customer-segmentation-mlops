@@ -1,3 +1,9 @@
+## Live Dashboard
+
+Explore the deployed SEGMENTIQ customer segmentation dashboard:
+
+**[Open SEGMENTIQ Dashboard](https://customer-segmentation-mlops-wyevujnjtnx7avpqdb4i8p.streamlit.app/)**
+
 # Customer Segmentation Pipeline (MLOps)
 
 ![CI](https://github.com/pradeep-teja51/customer-segmentation-mlops/actions/workflows/ci.yml/badge.svg)
