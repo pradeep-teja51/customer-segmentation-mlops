@@ -14,9 +14,15 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
 # ---- Step 3: Start an MLflow experiment ----
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
-mlflow.set_experiment("customer_segmentation")
+import dagshub
 
+dagshub.init(
+    repo_owner="marinedipradeep2006",
+    repo_name="customer-segmentation-mlops",
+    mlflow=True
+)
+
+mlflow.set_experiment("customer_segmentation")
 k = 4
 with mlflow.start_run():
     # Train the model
