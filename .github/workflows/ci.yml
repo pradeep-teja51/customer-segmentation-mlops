@@ -29,16 +29,27 @@ jobs:
       - name: Build Docker image
         run: docker build -t customer-segmentation-app .
 
-      - name: Smoke test the container
+            - name: Smoke test the container
         run: |
           docker run -d -p 8000:8000 --name seg-app customer-segmentation-app
+
           for i in $(seq 1 20); do
-            if curl --fail --silent http://localhost:8000/; then
-              echo "Service is up"
+            if ! docker inspect -f '{{.State.Running}}' seg-app | grep -q true; then
+              echo "Container stopped unexpectedly."
+              docker logs seg-app
+              exit 1
+            fi
+
+            if curl --fail --silent --show-error http://localhost:8000/; then
+              echo "Container smoke test passed."
               exit 0
             fi
+
+            echo "Waiting for API startup: attempt $i/20"
             sleep 3
           done
-          echo "Service did not respond. Container logs:"
+
+          echo "API did not respond. Container diagnostics:"
+          docker ps -a
           docker logs seg-app
           exit 1
