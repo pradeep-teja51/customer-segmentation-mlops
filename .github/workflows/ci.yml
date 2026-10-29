@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -9,6 +10,7 @@ on:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -20,6 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest httpx
 
@@ -29,19 +32,19 @@ jobs:
       - name: Build Docker image
         run: docker build -t customer-segmentation-app .
 
-            - name: Smoke test the container
+      - name: Smoke test the container
         run: |
           docker run -d -p 8000:8000 --name seg-app customer-segmentation-app
 
           for i in $(seq 1 20); do
             if ! docker inspect -f '{{.State.Running}}' seg-app | grep -q true; then
-              echo "Container stopped unexpectedly."
+              echo "Container stopped unexpectedly"
               docker logs seg-app
               exit 1
             fi
 
             if curl --fail --silent --show-error http://localhost:8000/; then
-              echo "Container smoke test passed."
+              echo "Container smoke test passed"
               exit 0
             fi
 
@@ -49,7 +52,7 @@ jobs:
             sleep 3
           done
 
-          echo "API did not respond. Container diagnostics:"
+          echo "API did not respond"
           docker ps -a
           docker logs seg-app
           exit 1
