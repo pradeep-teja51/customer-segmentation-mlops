@@ -831,10 +831,15 @@ if tracked_outputs:
                 config_text,
             )
 
-            if endpoint_match or (
-                url_match and "dagshub.com" in url_match.group(1)
-            ):
+
+            if endpoint_match and "dagshub.com" in endpoint_match.group(1):
+
                 remote_url = "DagsHub DVC"
+
+            elif url_match and "dagshub.com" in url_match.group(1):
+                remote_url = "DagsHub DVC"
+
+            
 
         except OSError:
             pass
