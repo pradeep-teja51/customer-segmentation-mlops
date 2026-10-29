@@ -297,92 +297,73 @@ except Exception as exc:
     model_error = str(exc)
 
 
+
 # ============================================================
-# MLFLOW DATABASE
+# MLFLOW EXPERIMENTS - DAGSHUB REMOTE TRACKING
 # ============================================================
 
 def load_mlflow():
-    candidates = [
-        path("mlflow.db"),
-        path("mlflow"),
-        path("mlflow.sqlite"),
-    ]
-
-    db = next(
-        (file for file in candidates if file.is_file()),
-        None,
-    )
-
-    if db is None:
-        return None, "Local MLflow SQL database not found."
-
-    conn = None
-
     try:
-        conn = sqlite3.connect(
-            f"file:{db.as_posix()}?mode=ro",
-            uri=True,
-        )
+        import os
+        import mlflow
+        from mlflow.tracking import MlflowClient
 
-        tables = pd.read_sql_query(
-            "SELECT name FROM sqlite_master WHERE type='table'",
-            conn,
-        )["name"].tolist()
+        tracking_uri = st.secrets.get("MLFLOW_TRACKING_URI")
+        username = st.secrets.get("MLFLOW_TRACKING_USERNAME")
+        password = st.secrets.get("MLFLOW_TRACKING_PASSWORD")
 
-        if not {"runs", "experiments"}.issubset(tables):
-            return None, "Expected MLflow tables not found in database."
+        if not tracking_uri or not username or not password:
+            return None, "DagsHub credentials are missing from Streamlit Secrets."
 
-        runs = pd.read_sql_query("""
-            SELECT
-                e.name AS experiment_name,
-                r.run_uuid,
-                r.status,
-                r.start_time,
-                r.end_time
-            FROM runs r
-            LEFT JOIN experiments e
-                ON r.experiment_id = e.experiment_id
-            ORDER BY r.start_time DESC
-        """, conn)
+        os.environ["MLFLOW_TRACKING_USERNAME"] = username
+        os.environ["MLFLOW_TRACKING_PASSWORD"] = password
 
-        for table in ("metrics", "params"):
-            if table not in tables:
-                continue
+        mlflow.set_tracking_uri(tracking_uri)
+        client = MlflowClient(tracking_uri=tracking_uri)
 
-            details = pd.read_sql_query(
-                f"SELECT run_uuid, key, value FROM {table}",
-                conn,
+        experiments = client.search_experiments()
+        rows = []
+
+        for experiment in experiments:
+            runs = client.search_runs(
+                experiment_ids=[experiment.experiment_id],
+                max_results=100,
+                order_by=["attributes.start_time DESC"],
             )
 
-            if details.empty:
-                continue
+            for run in runs:
+                row = {
+                    "experiment_name": experiment.name,
+                    "run_uuid": run.info.run_id,
+                    "status": run.info.status,
+                    "start_time": pd.to_datetime(
+                        run.info.start_time,
+                        unit="ms",
+                        errors="coerce",
+                    ),
+                    "end_time": pd.to_datetime(
+                        run.info.end_time,
+                        unit="ms",
+                        errors="coerce",
+                    ),
+                }
 
-            wide = details.pivot_table(
-                index="run_uuid",
-                columns="key",
-                values="value",
-                aggfunc="last",
-            ).reset_index()
+                row.update(run.data.params)
+                row.update(run.data.metrics)
+                rows.append(row)
 
-            runs = runs.merge(
-                wide,
-                on="run_uuid",
-                how="left",
-                suffixes=("", f"_{table}"),
-            )
+        if not rows:
+            return pd.DataFrame(), None
 
-        return runs, None
+        return pd.DataFrame(rows), None
 
     except Exception as exc:
-        return None, str(exc)
-
-    finally:
-        if conn is not None:
-            conn.close()
+        return None, f"DagsHub MLflow connection failed: {exc}"
 
 
 mlflow_runs, mlflow_error = load_mlflow()
 drift_report = path("monitoring/drift_report.html")
+
 
 
 # ============================================================
