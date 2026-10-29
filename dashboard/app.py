@@ -823,13 +823,14 @@ if tracked_outputs:
                 errors="replace",
             )
             endpoint_match = re.search(
-                r"(?m)^\s*endpointurl:\s*(.+?)\s*$",
+                r"(?m)^\s*endpointurl\s*[=:]\s*(.+?)\s*$",
                 config_text,
             )
             url_match = re.search(
-                r'(?m)^\s*url:\s*(.+?)\s*$',
+                r'(?m)^\s*url\s*[=:]\s*(.+?)\s*$',
                 config_text,
             )
+
 
 
             if endpoint_match and "dagshub.com" in endpoint_match.group(1):
