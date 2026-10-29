@@ -794,17 +794,86 @@ if tracked_outputs:
         hide_index=True,
     )
 
-    st.markdown("#### Tracked output overview")
+    
+    st.markdown("#### Dataset and remote storage")
 
-    st.bar_chart(
-        pd.Series(
-            [1] * len(tracked_outputs),
-            index=tracked_outputs,
-            name="Metadata entries",
-        ),
-        use_container_width=True,
-        height=220,
+    hash_match = re.search(
+        r"(?m)^\s*-\s*md5:\s*(.+?)\s*$",
+        metadata_text,
     )
+    size_match = re.search(
+        r"(?m)^\s*size:\s*(\d+)\s*$",
+        metadata_text,
+    )
+    files_match = re.search(
+        r"(?m)^\s*nfiles:\s*(\d+)\s*$",
+        metadata_text,
+    )
+
+    dataset_hash = hash_match.group(1) if hash_match else "Unavailable"
+    dataset_size = int(size_match.group(1)) if size_match else None
+    file_count = int(files_match.group(1)) if files_match else None
+
+    remote_url = "Not configured"
+
+    if dvc_config.is_file():
+        try:
+            config_text = dvc_config.read_text(
+                encoding="utf-8",
+                errors="replace",
+            )
+            endpoint_match = re.search(
+                r"(?m)^\s*endpointurl:\s*(.+?)\s*$",
+                config_text,
+            )
+            url_match = re.search(
+                r'(?m)^\s*url:\s*(.+?)\s*$',
+                config_text,
+            )
+
+            if endpoint_match or (
+                url_match and "dagshub.com" in url_match.group(1)
+            ):
+                remote_url = "DagsHub DVC"
+
+        except OSError:
+            pass
+
+    info_cols = st.columns(4)
+
+    with info_cols[0]:
+        metric(
+            "DATASET SIZE",
+            f"{dataset_size / (1024 * 1024):.2f} MB"
+            if dataset_size is not None else "Unavailable",
+            "Tracked dataset",
+        )
+
+    with info_cols[1]:
+        metric(
+            "FILES TRACKED",
+            file_count if file_count is not None else "Unavailable",
+            "Files in data/ folder",
+            "#8ab8ff",
+        )
+
+    with info_cols[2]:
+        metric(
+            "DATASET HASH",
+            dataset_hash[:12] + "..."
+            if dataset_hash != "Unavailable" else dataset_hash,
+            "Version identifier",
+            "#55e6a5",
+        )
+
+    with info_cols[3]:
+        metric(
+            "REMOTE STORAGE",
+            remote_url,
+            "DVC remote configuration",
+            "#b6a0ff",
+        )
+
 
 else:
     st.info(
